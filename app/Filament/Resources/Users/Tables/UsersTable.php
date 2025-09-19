@@ -23,6 +23,10 @@ class UsersTable
                 TextColumn::make('email')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('vendor.company_name')
+                    ->label('Vendor')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
                 BadgeColumn::make('roles.name')
                     ->label('Rollen')
                     ->separator(', ')

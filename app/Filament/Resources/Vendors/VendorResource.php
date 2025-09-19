@@ -39,7 +39,7 @@ class VendorResource extends Resource
                 ->label('Account naam')
                 ->helperText('Naam voor het verkoper account (optioneel, standaard bedrijfsnaam).')
                 ->maxLength(255)
-                ->dehydrated(false),
+                ->dehydrated(false), // keep false (optional, only needed in form state, not saved)
             TextInput::make('user_email')
                 ->label('Account e-mail')
                 ->email()
@@ -52,6 +52,7 @@ class VendorResource extends Resource
                 ->required()
                 ->revealable()
                 ->helperText('Wachtwoord voor nieuwe gebruiker (verkoper).')
+                // keep in form state so afterCreate can read it but exclude from model
                 ->dehydrated(false),
             Select::make('status')->options([
                 'prospect' => 'Prospect',

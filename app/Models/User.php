@@ -25,11 +25,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'vendor_id',
     ];
     // Only allow logged-in users with roles into Filament
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole(['admin', 'support', 'user']);
+        return $this->hasRole(['admin', 'support', 'user', 'verkoper', 'contactpersoon']);
     }
     
     /**
