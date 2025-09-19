@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Filament\Resources\Users\Pages;
+
+use App\Filament\Resources\Users\UserResource;
+use Filament\Actions\DeleteAction;
+use Illuminate\Support\Facades\Auth;
+use Filament\Resources\Pages\EditRecord;
+
+class EditUser extends EditRecord
+{
+    protected static string $resource = UserResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            DeleteAction::make()
+                ->visible(fn () => Auth::user()?->hasRole('admin')),
+        ];
+    }
+}
