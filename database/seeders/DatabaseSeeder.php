@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use App\Models\Event;
 
 class DatabaseSeeder extends Seeder
 {
@@ -37,5 +38,19 @@ class DatabaseSeeder extends Seeder
 
         // Optionally generate demo users (commented out)
         // User::factory(10)->create();
+
+        // Seed a sample event if none exists
+        if (! Event::query()->exists()) {
+            Event::create([
+                'name' => 'Sneakerness 2025',
+                'slug' => 'sneakerness-2025',
+                'status' => 'draft',
+                'starts_at' => now()->addMonth(),
+                'ends_at' => now()->addMonth()->addDay(),
+                'location' => 'Amsterdam RAI',
+                'capacity' => 5000,
+                'description' => 'Eerste editie van Sneakerness platform.',
+            ]);
+        }
     }
 }
