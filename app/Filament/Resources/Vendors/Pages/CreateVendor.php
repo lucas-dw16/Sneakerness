@@ -7,6 +7,8 @@ use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewUserAccount;
 
 class CreateVendor extends CreateRecord
 {
@@ -53,6 +55,14 @@ class CreateVendor extends CreateRecord
                 'vendor_id' => $vendor->id,
             ]);
             $user->assignRole('verkoper');
+
+            try {
+                $loginUrl = config('app.url') . '/admin';
+                Mail::to($email)->send(new NewUserAccount($name, $email, $password, $loginUrl));
+            } catch (\Throwable $e) {
+                // Swallow mail errors to not block creation; could log
+                report($e);
+            }
         });
     }
 }

@@ -7,6 +7,8 @@ use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewUserAccount;
 
 class CreateContactPerson extends CreateRecord
 {
@@ -51,6 +53,13 @@ class CreateContactPerson extends CreateRecord
                 'vendor_id' => $record->vendor_id,
             ]);
             $user->assignRole('contactpersoon');
+
+            try {
+                $loginUrl = config('app.url') . '/admin';
+                Mail::to($email)->send(new NewUserAccount($name, $email, $password, $loginUrl));
+            } catch (\Throwable $e) {
+                report($e);
+            }
         });
     }
 }
