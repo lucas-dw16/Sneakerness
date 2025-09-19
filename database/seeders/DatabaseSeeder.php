@@ -8,6 +8,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use App\Models\Event;
+use App\Models\Vendor;
 
 class DatabaseSeeder extends Seeder
 {
@@ -51,6 +52,19 @@ class DatabaseSeeder extends Seeder
                 'capacity' => 5000,
                 'description' => 'Eerste editie van Sneakerness platform.',
             ]);
+        }
+
+        if (! Vendor::query()->exists()) {
+            $vendor = Vendor::create([
+                'company_name' => 'Demo Vendor BV',
+                'status' => 'prospect',
+                'billing_email' => 'billing@demovendor.test',
+                'website' => 'https://demovendor.test',
+                'billing_address' => "Straat 1\n1234 AB Amsterdam\nNederland",
+                'notes' => 'Eerste demo leverancier.',
+            ]);
+            // (Optional) link admin to vendor for testing
+            // $admin->vendor()->associate($vendor)->save();
         }
     }
 }
