@@ -22,9 +22,10 @@ class CreateVendor extends CreateRecord
     protected function afterCreate(): void
     {
         $vendor = $this->record;
-        $name = $this->form->getState()['user_name'] ?: $vendor->company_name;
-        $email = $this->form->getState()['user_email'];
-        $password = $this->form->getState()['user_password'];
+        $state = $this->form->getState();
+        $name = $state['user_name'] ?? $vendor->company_name;
+        $email = $state['user_email'] ?? null;
+        $password = $state['user_password'] ?? null;
 
         if (! $email || ! $password) {
             return; // Should be required, but safeguard
