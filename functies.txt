@@ -1,0 +1,34 @@
+Bezoeker beheren:
+- tickets overzicht
+- ticket toevoegen 
+- ticket kopen
+- bevestigingsemail ontvangen
+- ticket wijzigen
+- ticket annuleren
+
+Verkoper beheren:
+- Verkoper overzicht
+- Verkoper toevoegen
+- Verkoper wijzigen
+- verkoper verwijderen
+
+Contactpersoon beheren:
+- contactpersoon overzicht
+- contactpersoon toevoegen
+- contactpersoon koppelen aan verkoper
+- contactpersoon wijzigen
+- contactpersoon loskoppelen van verkoper
+- contactpersoon verwijderen
+
+Stand beheren:
+- stand overzicht
+- stand toevoegen
+- stand reserveren
+- stand wijzigen
+- stand verwijderen
+
+Event beheren:
+- Event overzicht
+- event toevoegen
+- event wijzigen
+- event verwijderen
