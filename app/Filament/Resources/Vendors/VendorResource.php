@@ -35,6 +35,24 @@ class VendorResource extends Resource
     {
         return $schema->components([
             TextInput::make('company_name')->required()->maxLength(255)->label('Bedrijfsnaam'),
+            TextInput::make('user_name')
+                ->label('Account naam')
+                ->helperText('Naam voor het verkoper account (optioneel, standaard bedrijfsnaam).')
+                ->maxLength(255)
+                ->dehydrated(false),
+            TextInput::make('user_email')
+                ->label('Account e-mail')
+                ->email()
+                ->helperText('E-mail voor automatisch gebruiker aanmaken (verkoper rol).')
+                ->required()
+                ->dehydrated(false),
+            TextInput::make('user_password')
+                ->label('Account wachtwoord')
+                ->password()
+                ->required()
+                ->revealable()
+                ->helperText('Wachtwoord voor nieuwe gebruiker (verkoper).')
+                ->dehydrated(false),
             Select::make('status')->options([
                 'prospect' => 'Prospect',
                 'confirmed' => 'Confirmed',

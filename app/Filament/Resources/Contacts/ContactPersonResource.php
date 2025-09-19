@@ -44,6 +44,13 @@ class ContactPersonResource extends Resource
                 ->visible(fn () => Auth::user()?->hasRole('admin') || Auth::user()?->hasRole('support')),
             TextInput::make('name')->required()->maxLength(150),
             TextInput::make('email')->email()->required(),
+            TextInput::make('user_password')
+                ->label('Account wachtwoord')
+                ->password()
+                ->required()
+                ->revealable()
+                ->helperText('Wachtwoord voor automatisch contactpersoon account.')
+                ->dehydrated(false),
             TextInput::make('phone')->maxLength(50),
             TextInput::make('role_label')->label('Rol')->maxLength(100),
             Toggle::make('is_primary')->label('Primair'),
