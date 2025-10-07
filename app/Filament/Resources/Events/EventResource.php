@@ -24,23 +24,39 @@ use UnitEnum;
 
 class EventResource extends Resource
 {
+    /**
+     * Het onderliggende Eloquent model voor deze Resource.
+     */
     protected static ?string $model = Event::class;
 
+    /**
+     * Icon in de Filament navigatie.
+     */
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    /**
+     * Groep waaronder het item in de navigatie valt.
+     */
     public static function getNavigationGroup(): string|UnitEnum|null
     {
         return 'Event Management';
     }
 
+    /**
+     * Definitie van het formulier (create / edit) voor events.
+     * We gebruiken hier componenten van Filament Forms.
+     */
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            // Naam van het event - verplicht.
             TextInput::make('name')->required()->maxLength(150),
+            // Slug wordt automatisch gevuld via model observer / mutator (niet bewerkbaar hier).
             TextInput::make('slug')
                 ->disabled()
-                ->dehydrated(false)
+                ->dehydrated(false) // Niet opslaan omdat hij server-side gezet wordt.
                 ->helperText('Wordt automatisch gegenereerd uit naam.'),
+            // Status alleen zichtbaar voor admins zodat verkopers deze niet kunnen aanpassen.
             Select::make('status')
                 ->options([
                     'draft' => 'Draft',
@@ -52,15 +68,18 @@ class EventResource extends Resource
                 ->visible(fn () => Auth::user()?->hasRole('admin')),
             DateTimePicker::make('starts_at')->required()->seconds(false),
             DateTimePicker::make('ends_at')->required()->seconds(false)
-                ->rule('after:starts_at'),
+                ->rule('after:starts_at'), // Validatie: einddatum > startdatum
             TextInput::make('location')->maxLength(255),
             TextInput::make('capacity')->numeric()->minValue(0)->maxValue(500000)->nullable(),
-            MarkdownEditor::make('description')->toolbarButtons([
-                'bold', 'italic', 'strike', 'bulletList', 'orderedList', 'link', 'preview'
-            ])->nullable(),
+            MarkdownEditor::make('description')
+                ->toolbarButtons(['bold', 'italic', 'strike', 'bulletList', 'orderedList', 'link', 'preview'])
+                ->nullable(),
         ]);
     }
 
+    /**
+     * Tabelconfiguratie voor index pagina.
+     */
     public static function table(Table $table): Table
     {
         return $table
@@ -86,26 +105,34 @@ class EventResource extends Resource
                     ]),
             ])
             ->recordActions([
+                // Bewerken alleen voor admins.
                 EditAction::make()->visible(fn () => Auth::user()?->hasRole('admin')),
             ])
             ->toolbarActions([
-                // Additional toolbar actions can be added here
+                // Extra toolbar acties kunnen hier toegevoegd worden.
             ]);
     }
 
-    /* Authorization helpers */
+    /**
+     * Kleine helper om role-checks consistent te houden.
+     */
     protected static function userHas(array $roles): bool
     {
         $u = Auth::user();
         return $u && $u->hasAnyRole($roles);
     }
 
+    /**
+     * Mag de gebruiker de lijst zien? (published filtering gebeurt elders bij view per record)
+     */
     public static function canViewAny(): bool
     {
-        // Admin & support alles; verkoper / contactpersoon alleen published events
         return self::userHas(['admin', 'support', 'verkoper', 'contactpersoon']);
     }
 
+    /**
+     * Mag een individueel record bekeken worden.
+     */
     public static function canView($record): bool
     {
         if (self::userHas(['admin', 'support'])) return true;
@@ -135,11 +162,17 @@ class EventResource extends Resource
         return self::userHas(['admin']);
     }
 
+    /**
+     * Zichtbaarheid in navigatie beperken tot staff.
+     */
     public static function shouldRegisterNavigation(): bool
     {
         return self::userHas(['admin', 'support']);
     }
 
+    /**
+     * Toon badge met aantal gepubliceerde events voor staff.
+     */
     public static function getNavigationBadge(): ?string
     {
         if (self::userHas(['admin', 'support'])) {
@@ -148,11 +181,17 @@ class EventResource extends Resource
         return null;
     }
 
+    /**
+     * Welke attributen worden globaal doorzocht via Filament global search.
+     */
     public static function getGloballySearchableAttributes(): array
     {
         return ['name', 'status', 'location'];
     }
 
+    /**
+     * Pagina's (routes) die bij deze resource horen.
+     */
     public static function getPages(): array
     {
         return [

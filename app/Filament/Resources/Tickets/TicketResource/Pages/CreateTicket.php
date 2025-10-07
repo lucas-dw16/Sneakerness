@@ -8,19 +8,21 @@ use Illuminate\Support\Facades\Auth;
 
 class CreateTicket extends CreateRecord
 {
+    /** Resource klasse koppeling. */
     protected static string $resource = TicketResource::class;
 
+    /**
+     * Mutaties vóór het opslaan: koppel user, bereken total, forceer status.
+     */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = Auth::user();
         $data['user_id'] = $user->id;
-        // If user linked to a vendor (verkoper/contactpersoon) attach vendor_id
-        if ($user->vendor_id) {
-            $data['vendor_id'] = $user->vendor_id;
+        if (! isset($data['total_price']) && isset($data['quantity'], $data['unit_price'])) {
+            $data['total_price'] = $data['quantity'] * $data['unit_price'];
         }
-        // Force status open for non support/admin
         if (! $user->hasAnyRole(['admin','support'])) {
-            $data['status'] = 'open';
+            $data['status'] = 'pending';
         }
         return $data;
     }

@@ -18,11 +18,19 @@ use UnitEnum; // for signature compatibility if needed
 
 class UserResource extends Resource
 {
+    /**
+     * Het Eloquent model dat door deze resource beheerd wordt.
+     */
     protected static ?string $model = User::class;
 
+    /**
+     * Navigatie icoon in het Filament panel.
+     */
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    // Provide navigation group via accessor to avoid strict property typing issues
+    /**
+     * Groepering in het navigatiemenu.
+     */
     public static function getNavigationGroup(): string|UnitEnum|null
     {
         return 'User Management';
@@ -30,22 +38,26 @@ class UserResource extends Resource
 
     protected static ?string $modelLabel = 'User';
     protected static ?string $pluralModelLabel = 'Users';
-
     protected static ?string $recordTitleAttribute = 'name';
 
+    /**
+     * Formulierdefinitie (gedelegeerd aan aparte configuratieklasse).
+     */
     public static function form(Schema $schema): Schema
     {
         return UserForm::configure($schema);
     }
 
+    /**
+     * Tabeldefinitie (kolommen, filters enz). Uitbesteed voor overzichtelijkheid.
+     */
     public static function table(Table $table): Table
     {
         return UsersTable::configure($table);
     }
 
     /* -------------------------------------------------
-     |  Authorization (Spatie Roles)
-     |  Adjust role names to match your seeding.
+     |  Autorisatie (Spatie Rollen)
      |-------------------------------------------------- */
     protected static function currentUserHas(array $roles): bool
     {
@@ -60,25 +72,22 @@ class UserResource extends Resource
 
     public static function canCreate(): bool
     {
-        // Only admins may create users.
         return self::currentUserHas(['admin']);
     }
 
     public static function canEdit($record): bool
     {
-        // Only admins may edit users.
         return self::currentUserHas(['admin']);
     }
 
     public static function canDelete($record): bool
     {
-        // Only admins may delete users.
         return self::currentUserHas(['admin']);
     }
 
     public static function canForceDelete($record): bool
     {
-        return false; // Usually not needed
+        return false; // Geen permanente delete acties nodig hier.
     }
 
     public static function canDeleteAny(): bool
@@ -88,21 +97,19 @@ class UserResource extends Resource
 
     public static function canRestore($record): bool
     {
-        return false; // If using soft deletes, adjust
+        return false; // Aanpassen indien soft deletes geactiveerd worden.
     }
 
     /* -------------------------------------------------
-     |  Navigation visibility
+     |  Navigatie
      |-------------------------------------------------- */
     public static function shouldRegisterNavigation(): bool
     {
-        // Only show in sidebar for staff roles
         return self::currentUserHas(['admin', 'support']);
     }
 
     public static function getNavigationBadge(): ?string
     {
-        // Show total users (admins only to avoid leaking data to support if desired)
         return self::currentUserHas(['admin']) ? (string) User::count() : null;
     }
 
@@ -112,7 +119,7 @@ class UserResource extends Resource
     }
 
     /* -------------------------------------------------
-     |  Global Search (optional attributes)
+     |  Global Search
      |-------------------------------------------------- */
     public static function getGloballySearchableAttributes(): array
     {
@@ -122,10 +129,13 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            // Relaties / relation managers kunnen hier toegevoegd worden.
         ];
     }
 
+    /**
+     * Routes naar de Filament pagina klassen.
+     */
     public static function getPages(): array
     {
         return [

@@ -25,6 +25,7 @@ use UnitEnum;
 
 class StandResource extends Resource
 {
+    /** Model voor deze resource. */
     protected static ?string $model = Stand::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
@@ -34,17 +35,16 @@ class StandResource extends Resource
         return 'Event Management';
     }
 
-    protected static ?int $navigationSort = 65;
+    protected static ?int $navigationSort = 65; // Positie in navigatie
 
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
         if (! $user) return false;
-        // Visible for admin & support; verkoper/contactpersoon only see via relation (optional)
         return $user->hasAnyRole(['admin', 'support']);
     }
 
-    /* Authorization helpers similar to other resources */
+    /** Role helper. */
     protected static function userHas(array $roles): bool
     {
         $u = Auth::user();
@@ -85,6 +85,7 @@ class StandResource extends Resource
         return self::userHas(['admin']);
     }
 
+    /** Formulier: basisgegevens van een stand. */
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -106,6 +107,7 @@ class StandResource extends Resource
         ])->columns(2);
     }
 
+    /** Tabeloverzicht met filters. */
     public static function table(Table $table): Table
     {
         return $table
@@ -133,12 +135,12 @@ class StandResource extends Resource
             ]);
     }
 
+    /** Query scoping per rol. */
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-    $user = Auth::user();
+        $user = Auth::user();
         if ($user && $user->hasAnyRole(['verkoper','contactpersoon'])) {
-            // Limit to stands of the user's vendor (if vendor_id present)
             return $query->where('vendor_id', $user->vendor_id);
         }
         return $query;

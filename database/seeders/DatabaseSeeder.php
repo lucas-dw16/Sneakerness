@@ -37,8 +37,8 @@ class DatabaseSeeder extends Seeder
             $admin->assignRole('admin');
         }
 
-        // Optionally generate demo users (commented out)
-        // User::factory(10)->create();
+    // Optionally generate demo users (commented out)
+    // User::factory(10)->create();
 
         // Seed a sample event if none exists
         if (! Event::query()->exists()) {
@@ -66,5 +66,8 @@ class DatabaseSeeder extends Seeder
             // (Optional) link admin to vendor for testing
             // $admin->vendor()->associate($vendor)->save();
         }
+
+        // Run stand + ticket seeder (idempotent)
+        $this->call(\Database\Seeders\StandSeeder::class);
     }
 }

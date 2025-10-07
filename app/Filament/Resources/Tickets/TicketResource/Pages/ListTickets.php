@@ -11,11 +11,12 @@ class ListTickets extends ListRecords
 {
     protected static string $resource = TicketResource::class;
 
+    /** Actieknoppen boven de lijst. */
     protected function getHeaderActions(): array
     {
         return [
             CreateAction::make()
-                ->label('Nieuw Ticket')
+                ->label('Koop Tickets')
                 ->visible(fn () => Auth::check()),
         ];
     }

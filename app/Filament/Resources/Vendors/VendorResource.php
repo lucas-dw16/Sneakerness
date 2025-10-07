@@ -22,6 +22,7 @@ use UnitEnum;
 
 class VendorResource extends Resource
 {
+    /** Onderliggend model. */
     protected static ?string $model = Vendor::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
@@ -31,15 +32,17 @@ class VendorResource extends Resource
         return 'Vendor Management';
     }
 
+    /** Formulier definitie. */
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             TextInput::make('company_name')->required()->maxLength(255)->label('Bedrijfsnaam'),
+            // Veld enkel voor aanmaken gekoppelde user (niet opslaan op vendor)
             TextInput::make('user_name')
                 ->label('Account naam')
                 ->helperText('Naam voor het verkoper account (optioneel, standaard bedrijfsnaam).')
                 ->maxLength(255)
-                ->dehydrated(false), // keep false (optional, only needed in form state, not saved)
+                ->dehydrated(false),
             TextInput::make('user_email')
                 ->label('Account e-mail')
                 ->email()
@@ -52,7 +55,6 @@ class VendorResource extends Resource
                 ->required()
                 ->revealable()
                 ->helperText('Wachtwoord voor nieuwe gebruiker (verkoper).')
-                // keep in form state so afterCreate can read it but exclude from model
                 ->dehydrated(false),
             Select::make('status')->options([
                 'prospect' => 'Prospect',
@@ -68,6 +70,7 @@ class VendorResource extends Resource
         ]);
     }
 
+    /** Tabel kolommen & filters. */
     public static function table(Table $table): Table
     {
         return $table
@@ -91,6 +94,7 @@ class VendorResource extends Resource
             ->recordActions([]);
     }
 
+    /** Role helper. */
     protected static function userHas(array $roles): bool
     {
         $u = Auth::user();
@@ -99,9 +103,8 @@ class VendorResource extends Resource
 
     public static function canViewAny(): bool
     {
-        // Admin & support; verkoper alleen eigen vendor (
         if (self::userHas(['admin', 'support'])) return true;
-        if (self::userHas(['verkoper'])) return true; // we scope in query override (future)
+        if (self::userHas(['verkoper'])) return true; // Query scoping volgt in getEloquentQuery indien nodig
         return false;
     }
 

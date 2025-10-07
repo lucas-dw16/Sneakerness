@@ -11,27 +11,16 @@ class EditTicket extends EditRecord
 {
     protected static string $resource = TicketResource::class;
 
+    /** Beperk wat een niet-admin mag wijzigen & bereken total. */
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $user = Auth::user();
-        // Non support/admin cannot change status manually (status field hidden anyway)
         if (! $user->hasAnyRole(['admin','support'])) {
-            unset($data['status']);
+            unset($data['status']); // Status alleen voor staff
+        }
+        if (isset($data['quantity'], $data['unit_price'])) {
+            $data['total_price'] = $data['quantity'] * $data['unit_price'];
         }
         return $data;
-    }
-
-    protected function afterSave(): void
-    {
-        // Auto set resolved_at timestamp if status is resolved/closed
-        $ticket = $this->record;
-        if (in_array($ticket->status, ['resolved','closed']) && ! $ticket->resolved_at) {
-            $ticket->resolved_at = now();
-            $ticket->save();
-        }
-        if (! in_array($ticket->status, ['resolved','closed']) && $ticket->resolved_at) {
-            $ticket->resolved_at = null;
-            $ticket->save();
-        }
     }
 }

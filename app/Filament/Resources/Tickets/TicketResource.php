@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Tickets;
 
 use App\Filament\Resources\Tickets\TicketResource\Pages;
 use App\Models\Ticket;
+use App\Models\Event;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -22,15 +23,16 @@ use UnitEnum;
 
 class TicketResource extends Resource
 {
+    /** Ticket aankopen voor events (géén support). */
     protected static ?string $model = Ticket::class;
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftEllipsis;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTicket; // ander passend icoon
 
     public static function getNavigationGroup(): string|UnitEnum|null
     {
-        return 'Support';
+        return 'Event Management';
     }
 
-    protected static ?int $navigationSort = 80;
+    protected static ?int $navigationSort = 90;
 
     protected static function userHas(array $roles): bool
     {
@@ -40,22 +42,21 @@ class TicketResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
+        // Iedere ingelogde rol die tickets kan kopen mag het menu zien.
         return self::userHas(['admin','support','verkoper','contactpersoon','user']);
     }
 
     public static function canCreate(): bool
     {
-        // All authenticated roles can create a ticket
         return Auth::check();
     }
 
     public static function canEdit($record): bool
     {
+        // Alleen bewerkbaar zolang status 'pending' is en eigenaar of admin/support.
         if (self::userHas(['admin','support'])) return true;
         $u = Auth::user();
-        if (! $u) return false;
-        // Owner may edit only while open/in_progress
-        return $record->user_id === $u->id && in_array($record->status, ['open','in_progress']);
+        return $u && $record->user_id === $u->id && $record->status === 'pending';
     }
 
     public static function canDelete($record): bool
@@ -71,61 +72,74 @@ class TicketResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('subject')->required()->maxLength(255),
-            Textarea::make('description')->required()->rows(6),
-            Select::make('priority')->options([
-                'low' => 'Low',
-                'normal' => 'Normal',
-                'high' => 'High',
-                'urgent' => 'Urgent',
-            ])->default('normal')->required(),
-            Select::make('status')->options([
-                'open' => 'Open',
-                'in_progress' => 'In Progress',
-                'resolved' => 'Resolved',
-                'closed' => 'Closed',
-            ])->default('open')
+            Select::make('event_id')
+                ->label('Event')
+                ->relationship('event','name')
+                ->required()
+                ->searchable()
+                ->preload(),
+            TextInput::make('quantity')
+                ->numeric()
+                ->minValue(1)
+                ->default(1)
+                ->required()
+                ->label('Aantal'),
+            TextInput::make('unit_price')
+                ->numeric()
+                ->step('0.01')
+                ->required()
+                ->prefix('€')
+                ->label('Prijs per stuk'),
+            TextInput::make('total_price')
+                ->disabled()
+                ->dehydrated()
+                ->numeric()
+                ->label('Totaal (€)')
+                ->helperText('Wordt automatisch berekend (aantal × prijs).'),
+            Select::make('status')
+                ->options([
+                    'pending' => 'Pending',
+                    'paid' => 'Paid',
+                    'cancelled' => 'Cancelled',
+                ])
+                ->default('pending')
                 ->visible(fn () => self::userHas(['admin','support']))
-                ->required(),
+                ->label('Status'),
+            Select::make('type')
+                ->options([
+                    'regular' => 'Regular',
+                    'vip' => 'VIP',
+                ])->default('regular')->label('Type'),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('subject')->searchable()->label('Onderwerp')->limit(40),
+            TextColumn::make('event.name')->label('Event')->searchable(),
+            TextColumn::make('user.name')->label('Koper')->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('type')->label('Type')->badge()->color(fn($state) => $state === 'vip' ? 'warning' : 'primary'),
+            TextColumn::make('quantity')->label('Aantal'),
+            TextColumn::make('unit_price')->money('eur', true)->label('Prijs'),
+            TextColumn::make('total_price')->money('eur', true)->label('Totaal'),
             BadgeColumn::make('status')->colors([
-                'warning' => 'open',
-                'info' => 'in_progress',
-                'success' => 'resolved',
-                'gray' => 'closed',
+                'warning' => 'pending',
+                'success' => 'paid',
+                'danger' => 'cancelled',
             ])->label('Status'),
-            BadgeColumn::make('priority')->colors([
-                'success' => 'low',
-                'primary' => 'normal',
-                'warning' => 'high',
-                'danger' => 'urgent',
-            ])->label('Prioriteit'),
-            TextColumn::make('user.name')->label('Aangemaakt door')->toggleable(isToggledHiddenByDefault: true),
-            TextColumn::make('vendor.company_name')->label('Vendor')->toggleable(),
             TextColumn::make('created_at')->since()->label('Aangemaakt'),
         ])->filters([
             SelectFilter::make('status')->options([
-                'open' => 'Open',
-                'in_progress' => 'In Progress',
-                'resolved' => 'Resolved',
-                'closed' => 'Closed',
+                'pending' => 'Pending',
+                'paid' => 'Paid',
+                'cancelled' => 'Cancelled',
             ]),
-            SelectFilter::make('priority')->options([
-                'low' => 'Low',
-                'normal' => 'Normal',
-                'high' => 'High',
-                'urgent' => 'Urgent',
-            ]),
+            SelectFilter::make('type')->options([
+                'regular' => 'Regular',
+                'vip' => 'VIP',
+            ])->label('Type'),
         ])->recordActions([
-            EditAction::make()
-                ->label('Open')
-                ->visible(fn ($record) => self::canEdit($record)),
+            EditAction::make()->visible(fn ($record) => self::canEdit($record)),
         ])->bulkActions([]);
     }
 
@@ -134,10 +148,8 @@ class TicketResource extends Resource
         $query = parent::getEloquentQuery();
         $u = Auth::user();
         if (! $u) return $query->whereRaw('1=0');
-        if ($u->hasAnyRole(['admin','support'])) return $query;
-        if ($u->hasAnyRole(['verkoper','contactpersoon'])) {
-            return $query->where('vendor_id', $u->vendor_id);
-        }
+        if ($u->hasAnyRole(['admin','support'])) return $query; // alles
+        // Overige rollen zien alleen hun eigen aankopen
         return $query->where('user_id', $u->id);
     }
 

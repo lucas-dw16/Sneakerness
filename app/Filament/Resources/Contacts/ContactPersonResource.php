@@ -23,6 +23,7 @@ use UnitEnum;
 
 class ContactPersonResource extends Resource
 {
+    /** Model dat wordt beheerd. */
     protected static ?string $model = ContactPerson::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
@@ -32,6 +33,7 @@ class ContactPersonResource extends Resource
         return 'Vendor Management';
     }
 
+    /** Formulier voor create / edit. */
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -44,6 +46,7 @@ class ContactPersonResource extends Resource
                 ->visible(fn () => Auth::user()?->hasRole('admin') || Auth::user()?->hasRole('support')),
             TextInput::make('name')->required()->maxLength(150),
             TextInput::make('email')->email()->required(),
+            // Wachtwoord alleen in form state; gebruiker wordt na create automatisch aangemaakt / geüpdatet.
             TextInput::make('user_password')
                 ->label('Account wachtwoord')
                 ->password()
@@ -57,6 +60,7 @@ class ContactPersonResource extends Resource
         ]);
     }
 
+    /** Tabel definitie voor index lijst. */
     public static function table(Table $table): Table
     {
         return $table
@@ -77,6 +81,7 @@ class ContactPersonResource extends Resource
             ->recordUrl(fn ($record) => static::canEdit($record) ? static::getUrl('edit', ['record' => $record]) : null);
     }
 
+    /** Hulpmethode voor role checks. */
     protected static function userHas(array $roles): bool
     {
         $u = Auth::user();
@@ -86,7 +91,7 @@ class ContactPersonResource extends Resource
     public static function canViewAny(): bool
     {
         if (self::userHas(['admin', 'support'])) return true;
-        if (self::userHas(['verkoper'])) return true; // limited to own vendor in future override
+        if (self::userHas(['verkoper'])) return true; // In toekomst scoping naar eigen vendor
         return false;
     }
 
@@ -101,7 +106,6 @@ class ContactPersonResource extends Resource
 
     public static function canCreate(): bool
     {
-        // Admin; verkoper could create own contact later (not yet)
         return self::userHas(['admin']);
     }
 
